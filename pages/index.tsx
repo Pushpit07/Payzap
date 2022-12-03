@@ -82,7 +82,7 @@ const Home: NextPage = () => {
                   width: "100",
                   borderRadius: "1px",
                 }}
-                constraints={{ aspectRatio: 10 / 1 }}
+                constraints={{ aspectRatio: 1 / 1, facingMode: "rear" }}
               />
               <p>{data}</p>
             </div>
