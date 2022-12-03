@@ -19,7 +19,7 @@ const Home: NextPage = () => {
     userAddress: string;
   }>();
   const [chains, setChains] = useState<ExtendedChain[]>();
-  const [chainID, setChainID] = useState(137);
+  const [chainID, setChainID] = useState(1);
   const [tokens, setTokens] = useState<Token[]>();
   const [tokenAddress, setTokenAddress] = useState<string>();
   const [pay, setPay] = useState(true);
