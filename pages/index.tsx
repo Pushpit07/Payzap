@@ -2,15 +2,14 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { QrReader } from "react-qr-reader";
-import chains from "../constants/chains.json";
-import tokens from "../constants/tokens";
 import Image from "next/image";
 import QRCode from "react-qr-code";
 import { useAccount, usePrepareSendTransaction, useSendTransaction } from "wagmi";
 import { TransactionRequest } from "@ethersproject/providers";
-import { generateSteps } from "../utils/interaction";
+import { generateSteps, getChains, getTokens } from "../utils/interaction";
 import { useEnsName } from "wagmi";
 import { useEnsAvatar } from "wagmi";
+import { ExtendedChain, Token } from "@lifi/sdk";
 
 const Home: NextPage = () => {
   const [txData, setTxData] = useState<{
@@ -19,8 +18,10 @@ const Home: NextPage = () => {
     amount: string;
     userAddress: string;
   }>();
+  const [chains, setChains] = useState<ExtendedChain[]>();
   const [chainID, setChainID] = useState(137);
-  const [tokenAddress, setTokenAddress] = useState(tokens[chainID][0].address);
+  const [tokens, setTokens] = useState<Token[]>();
+  const [tokenAddress, setTokenAddress] = useState<string>();
   const [pay, setPay] = useState(true);
   const [amount, setAmount] = useState<number>();
   const [txRequest, setTxRequest] = useState<TransactionRequest>();
@@ -38,6 +39,7 @@ const Home: NextPage = () => {
     isLoading: isENSLoading,
   } = useEnsName({
     address: (txData?.userAddress || "") as unknown as `0x${string}`,
+    chainId: 1,
   });
 
   const {
@@ -46,6 +48,7 @@ const Home: NextPage = () => {
     isLoading: isENSAvatarLoading,
   } = useEnsAvatar({
     address: (txData?.userAddress || "") as unknown as `0x${string}`,
+    chainId: 1,
   });
 
   const { config, error } = usePrepareSendTransaction({
@@ -58,12 +61,29 @@ const Home: NextPage = () => {
   const { data, isLoading, isSuccess, sendTransaction } = useSendTransaction(config);
 
   useEffect(() => {
+    (async () => {
+      const chains = await getChains();
+      setChains(chains);
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (chainID) {
+        const tokens = await getTokens({ chains: [chainID] });
+        setTokens(tokens.tokens[chainID]);
+        setTokenAddress(tokens.tokens[chainID][0].address);
+      }
+    })();
+  }, [chainID]);
+
+  useEffect(() => {
     if (txData && pay && account.address) {
       (async () => {
-        if (!account.address) return;
+        if (!account.address || !tokenAddress) return;
         const steps = await generateSteps({
-          fromChain: 137,
-          fromToken: "",
+          fromChain: chainID,
+          fromToken: tokenAddress,
           fromAddress: account.address,
           fromAmount: "1000",
           toChain: txData.chainId,
@@ -74,12 +94,12 @@ const Home: NextPage = () => {
         setTxRequest(steps?.transactionRequest);
       })();
     }
-  }, [txData, pay, account]);
+  }, [txData, pay, account, tokenAddress]);
 
   const Active =
-    "flex flex-row justify-center items-center bg-purple text-white rounded-full px-4 py-1 text-lg";
+    "flex flex-row justify-center items-center bg-purple text-white rounded-full px-4 py-1 text-lg cursor-pointer";
   const InActive =
-    "flex flex-row justify-center items-center bg-white text-purple rounded-full px-4 py-1 text-lg";
+    "flex flex-row justify-center items-center bg-white text-purple rounded-full px-4 py-1 text-lg cursor-pointer";
 
   function handleToggle() {
     setPay(!pay);
@@ -96,7 +116,7 @@ const Home: NextPage = () => {
     setQRData({
       amount: amount,
       chainID: chainID,
-      tokenAddress: tokenAddress,
+      tokenAddress: tokenAddress || "",
       userAddress: account.address,
     });
   }
@@ -164,7 +184,7 @@ const Home: NextPage = () => {
                   <h1 className="font-black text-black text-7xl">{txData?.amount}</h1>
                   <h1 className="text-sm uppercase">to</h1>
                   <h1>{!isENSAvatarLoading && reciverENSAvatar}</h1>
-                  <div className="flex flex-row justify-center items-center">
+                  <div className="flex flex-row justify-center items-center py-1.5">
                     <Image
                       alt="Reciever Name"
                       src={
@@ -172,62 +192,84 @@ const Home: NextPage = () => {
                           ? reciverENSAvatar
                           : "https://cryptologos.cc/logos/ethereum-name-service-ens-logo.png"
                       }
-                      width={50}
-                      height={50}
+                      width={35}
+                      height={35}
                     />
-                    <h1 className="text-gray-600 text-lg ml-2">
-                      {isENSLoading ? txData?.userAddress : reciverENSName}
+                    <h1
+                      className={`text-gray-600 text-lg ml-2 ${!reciverENSName && "truncate w-52"}`}
+                    >
+                      {!reciverENSName ? txData?.userAddress : reciverENSName}
                     </h1>
                   </div>
-                  <div className="w-full">
-                    <label className="w-full text-sm" htmlFor="chains">
-                      Select a chain
-                    </label>
-                    <select
-                      className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
-                      name="chains"
-                      id="chains"
-                      onChange={(e) => setChainID(Number(e.target.value))}
-                    >
-                      {chains.chains.map((chain, index) => {
-                        return (
-                          <option key={index} value={chain.id}>
-                            <div>
-                              <Image src={chain.logoURI} alt={chain.name} height={24} width={24} />
-                              {chain.name}
-                            </div>
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                  <div className="w-full">
-                    <label className="text-sm" htmlFor="chains">
-                      Select a token
-                    </label>
-                    <select
-                      className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
-                      name="chains"
-                      id="chains"
-                      onChange={(e) => setTokenAddress(e.target.value)}
-                    >
-                      {tokens[chainID].map((token, index) => {
-                        return (
-                          <option key={index} value={token.address}>
-                            <div>
-                              <Image src={token.logoURI} alt={token.name} height={24} width={24} />
-                              {token.symbol}
-                            </div>
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <div className="w-full rounded-md bg-purple py-3 mt-4">
-                      <button className="w-full text-white text-lg" onClick={() => generateQR()}>
-                        PAY
-                      </button>
-                    </div>
-                  </div>
+                  {isLoading ? (
+                    <div>Loading</div>
+                  ) : (
+                    <>
+                      <div className="w-full">
+                        <label className="w-full text-sm" htmlFor="chains">
+                          Select a chain
+                        </label>
+                        <select
+                          className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
+                          name="chains"
+                          id="chains"
+                          onChange={(e) => setChainID(Number(e.target.value))}
+                        >
+                          {chains?.map((chain, index) => {
+                            return (
+                              <option key={index} value={chain.id}>
+                                <div>
+                                  <img
+                                    src={chain.logoURI}
+                                    alt={chain.name}
+                                    height={24}
+                                    width={24}
+                                  />
+                                  {chain.name}
+                                </div>
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                      <div className="w-full">
+                        <label className="text-sm" htmlFor="chains">
+                          Select a token
+                        </label>
+                        <select
+                          className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
+                          name="chains"
+                          id="chains"
+                          onChange={(e) => setTokenAddress(e.target.value)}
+                        >
+                          {tokens?.map((token, index) => {
+                            return (
+                              <option key={index} value={token.address}>
+                                <div>
+                                  <img
+                                    src={token.logoURI}
+                                    alt={token.name}
+                                    height={24}
+                                    width={24}
+                                  />
+                                  {token.symbol}
+                                </div>
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <div className="w-full rounded-md bg-purple py-3 mt-4">
+                          <button
+                            disabled={!sendTransaction}
+                            className="w-full text-white text-lg"
+                            onClick={() => sendTransaction?.()}
+                          >
+                            {isLoading ? "Check Wallet" : "PAY"}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -258,16 +300,11 @@ const Home: NextPage = () => {
                         id="chains"
                         onChange={(e) => setChainID(Number(e.target.value))}
                       >
-                        {chains.chains.map((chain, index) => {
+                        {chains?.map((chain, index) => {
                           return (
                             <option key={index} value={chain.id}>
                               <div>
-                                <Image
-                                  src={chain.logoURI}
-                                  alt={chain.name}
-                                  height={24}
-                                  width={24}
-                                />
+                                <img src={chain.logoURI} alt={chain.name} height={24} width={24} />
                                 {chain.name}
                               </div>
                             </option>
@@ -285,16 +322,11 @@ const Home: NextPage = () => {
                         id="chains"
                         onChange={(e) => setTokenAddress(e.target.value)}
                       >
-                        {tokens[chainID].map((token, index) => {
+                        {tokens?.map((token, index) => {
                           return (
                             <option key={index} value={token.address}>
                               <div>
-                                <Image
-                                  src={token.logoURI}
-                                  alt={token.name}
-                                  height={24}
-                                  width={24}
-                                />
+                                <img src={token.logoURI} alt={token.name} height={24} width={24} />
                                 {token.symbol}
                               </div>
                             </option>
