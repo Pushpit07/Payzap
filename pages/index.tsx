@@ -2,15 +2,19 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { useState } from "react";
 import { QrReader } from "react-qr-reader";
+import chains from "../constants/chains.json";
+import tokens from "../constants/tokens";
+import Image from "next/image";
 
 const Home: NextPage = () => {
   const [data, setData] = useState("No result");
+  const [chainID, setChainID] = useState("137");
   const [pay, setPay] = useState(true);
 
   const Active =
-    "flex flex-row justify-center items-center bg-purple text-white rounded-full px-2 py-1 text-lg";
+    "flex flex-row justify-center items-center bg-purple text-white rounded-full px-4 py-1 text-lg";
   const InActive =
-    "flex flex-row justify-center items-center bg-white text-purple rounded-full px-2 py-1 text-lg";
+    "flex flex-row justify-center items-center bg-white text-purple rounded-full px-4 py-1 text-lg";
 
   function handleToggle() {
     setPay(!pay);
@@ -20,24 +24,20 @@ const Home: NextPage = () => {
     <div>
       <Head>
         <title>Payzap App</title>
-        <meta
-          name="description"
-          content="Payzap your cross chain payment solution"
-        />
+        <meta name="description" content="Payzap your cross chain payment solution" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="min-h-screen flex flex-col justify-center items-center">
-        <div className="bg-white shadow-md rounded-md w-96  px-8 py-4">
-          <div className="flex flex-row justify-evenly ">
-            <div
-              className={pay ? Active : InActive}
-              onClick={() => handleToggle()}>
+        <div className="bg-white shadow-md rounded-md w-96 px-8 py-4">
+          <div className="flex flex-row justify-evenly">
+            <div className={pay ? Active : InActive} onClick={() => handleToggle()}>
               Pay
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
-                className="w-6 h-6 ml-1">
+                className="w-6 h-6 ml-1"
+              >
                 <path d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" />
                 <path
                   fillRule="evenodd"
@@ -46,15 +46,9 @@ const Home: NextPage = () => {
                 />
               </svg>
             </div>
-            <div
-              className={!pay ? Active : InActive}
-              onClick={() => handleToggle()}>
+            <div className={!pay ? Active : InActive} onClick={() => handleToggle()}>
               Recieve
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-6 h-6 ml-1">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" className="w-6 h-6 ml-1">
                 <path
                   fillRule="evenodd"
                   d="M3 4.875C3 3.839 3.84 3 4.875 3h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 013 9.375v-4.5zM4.875 4.5a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zm7.875.375c0-1.036.84-1.875 1.875-1.875h4.5C20.16 3 21 3.84 21 4.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 01-1.875-1.875v-4.5zm1.875-.375a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zM6 6.75A.75.75 0 016.75 6h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75A.75.75 0 016 7.5v-.75zm9.75 0A.75.75 0 0116.5 6h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zM3 14.625c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.035-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 013 19.125v-4.5zm1.875-.375a.375.375 0 00-.375.375v4.5c0 .207.168.375.375.375h4.5a.375.375 0 00.375-.375v-4.5a.375.375 0 00-.375-.375h-4.5zm7.875-.75a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm6 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zM6 16.5a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm9.75 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm-3 3a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75zm6 0a.75.75 0 01.75-.75h.75a.75.75 0 01.75.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75z"
@@ -67,13 +61,12 @@ const Home: NextPage = () => {
             <div className="flex flex-col justify-center items-center my-10">
               <QrReader
                 onResult={(result, error) => {
-                  console.log(result);
                   if (!!result) {
                     setData(result?.getText());
                   }
 
                   if (!!error) {
-                    console.info(error);
+                    // console.info(error);
                   }
                 }}
                 className="w-full aspect-square"
@@ -88,7 +81,62 @@ const Home: NextPage = () => {
             </div>
           ) : (
             <div className="flex flex-col justify-center items-center my-10">
-              Recieve
+              <div className="w-full">
+                <label className="w-full text-sm" htmlFor="chains">
+                  Select a chain
+                </label>
+                <select
+                  className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
+                  name="chains"
+                  id="chains"
+                  onChange={(e) => setChainID(e.target.value)}
+                >
+                  {chains.chains.map((chain, index) => {
+                    return (
+                      <option key={index} value={chain.id}>
+                        <div>
+                          <Image src={chain.logoURI} alt={chain.name} height={24} width={24} />
+                          {chain.name}
+                        </div>
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              <div className="w-full">
+                <label className="text-sm" htmlFor="chains">
+                  Select a token
+                </label>
+                <select
+                  className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
+                  name="chains"
+                  id="chains"
+                >
+                  {tokens[chainID].map((token, index) => {
+                    return (
+                      <option key={index} value={token.address}>
+                        <div>
+                          <Image src={token.logoURI} alt={token.name} height={24} width={24} />
+                          {token.symbol}
+                        </div>
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              <div className="mb-2">
+                <label className="w-full text-sm" htmlFor="chains">
+                  Enter the amount
+                </label>
+                <input
+                  type="number"
+                  className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-base"
+                  placeholder="Enter the amount"
+                />
+              </div>
+              <div className="w-full rounded-md bg-purple py-3 mt-4">
+                <button className="w-full text-white text-lg">Generate QR</button>
+              </div>
             </div>
           )}
         </div>
