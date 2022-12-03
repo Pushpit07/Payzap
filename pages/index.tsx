@@ -76,13 +76,13 @@ const Home: NextPage = () => {
                     console.info(error);
                   }
                 }}
-                className="w-full aspect-square"
+                className="w-full aspect-square object-fill"
                 videoStyle={{
                   height: "100%",
-                  width: "100",
+                  width: "100%",
                   borderRadius: "1px",
                 }}
-                constraints={{ aspectRatio: 1 / 1, facingMode: "rear" }}
+                constraints={{ facingMode: "user" }}
               />
               <p>{data}</p>
             </div>
