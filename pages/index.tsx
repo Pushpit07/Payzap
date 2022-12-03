@@ -27,7 +27,7 @@ const Home: NextPage = () => {
   const [txRequest, setTxRequest] = useState<TransactionRequest>();
   const [qrdata, setQRData] = useState<{
     amount: number;
-    chainID: number;
+    chainId: number;
     tokenAddress: string;
     userAddress: string;
   }>();
@@ -94,7 +94,7 @@ const Home: NextPage = () => {
         setTxRequest(steps?.transactionRequest);
       })();
     }
-  }, [txData, pay, account, tokenAddress]);
+  }, [txData, pay, account, tokenAddress, chainID]);
 
   const Active =
     "flex flex-row justify-center items-center bg-purple text-white rounded-full px-4 py-1 text-lg cursor-pointer";
@@ -115,7 +115,7 @@ const Home: NextPage = () => {
     }
     setQRData({
       amount: amount,
-      chainID: chainID,
+      chainId: chainID,
       tokenAddress: tokenAddress || "",
       userAddress: account.address,
     });
@@ -167,7 +167,6 @@ const Home: NextPage = () => {
               {!txData ? (
                 <QrReader
                   onResult={(result, error) => {
-                    if (error) console.info(error);
                     if (result) setTxData(JSON.parse(result?.getText()));
                   }}
                   className="w-full aspect-square"
