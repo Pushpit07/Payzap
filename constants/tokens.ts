@@ -1,5 +1,5 @@
 const tokens: {
-  [chainId: string]: {
+  [chainId: number]: {
     address: string;
     symbol: string;
     name: string;
@@ -9,7 +9,7 @@ const tokens: {
     logoURI: string;
   }[];
 } = {
-  "137": [
+  137: [
     {
       address: "0x0000000000000000000000000000000000000000",
       symbol: "MATIC",
@@ -41,7 +41,7 @@ const tokens: {
         "https://static.debank.com/image/matic_token/logo_url/0x7ceb23fd6bc0add59e62ac25578270cff1b9f619/61844453e63cf81301f845d7864236f6.png",
     },
   ],
-  "43114": [
+  43114: [
     {
       address: "0x0000000000000000000000000000000000000000",
       symbol: "AVAX",
@@ -73,7 +73,7 @@ const tokens: {
       coinKey: "USDC",
     },
   ],
-  "42161": [
+  42161: [
     {
       address: "0x0000000000000000000000000000000000000000",
       symbol: "ETH",

@@ -5,11 +5,21 @@ import { QrReader } from "react-qr-reader";
 import chains from "../constants/chains.json";
 import tokens from "../constants/tokens";
 import Image from "next/image";
+import QRCode from "react-qr-code";
 
 const Home: NextPage = () => {
   const [data, setData] = useState("No result");
-  const [chainID, setChainID] = useState("137");
+  const [chainID, setChainID] = useState(137);
+  const [tokenAddress, setTokenAddress] = useState(tokens[chainID][0].address);
   const [pay, setPay] = useState(true);
+  const [amount, setAmount] = useState<number>();
+
+  const [qrdata, setQRData] = useState<{
+    amount: number;
+    chainID: number;
+    tokenAddress: string;
+    userAddress: string;
+  }>();
 
   const Active =
     "flex flex-row justify-center items-center bg-purple text-white rounded-full px-4 py-1 text-lg";
@@ -19,7 +29,22 @@ const Home: NextPage = () => {
   function handleToggle() {
     setPay(!pay);
   }
-
+  function generateQR() {
+    if (!amount) {
+      console.log("Not a valid amount");
+      return;
+    }
+    if (amount <= 0) {
+      console.log("Amount less than equal to zero");
+      return;
+    }
+    setQRData({
+      amount: amount,
+      chainID: chainID,
+      tokenAddress: tokenAddress,
+      userAddress: "string",
+    });
+  }
   return (
     <div>
       <Head>
@@ -81,61 +106,93 @@ const Home: NextPage = () => {
             </div>
           ) : (
             <div className="flex flex-col justify-center items-center my-10">
-              <div className="w-full">
-                <label className="w-full text-sm" htmlFor="chains">
-                  Select a chain
-                </label>
-                <select
-                  className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
-                  name="chains"
-                  id="chains"
-                  onChange={(e) => setChainID(e.target.value)}
-                >
-                  {chains.chains.map((chain, index) => {
-                    return (
-                      <option key={index} value={chain.id}>
-                        <div>
-                          <Image src={chain.logoURI} alt={chain.name} height={24} width={24} />
-                          {chain.name}
-                        </div>
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-              <div className="w-full">
-                <label className="text-sm" htmlFor="chains">
-                  Select a token
-                </label>
-                <select
-                  className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
-                  name="chains"
-                  id="chains"
-                >
-                  {tokens[chainID].map((token, index) => {
-                    return (
-                      <option key={index} value={token.address}>
-                        <div>
-                          <Image src={token.logoURI} alt={token.name} height={24} width={24} />
-                          {token.symbol}
-                        </div>
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-              <div className="mb-2">
-                <label className="w-full text-sm" htmlFor="chains">
-                  Enter the amount
-                </label>
-                <input
-                  type="number"
-                  className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-base"
-                  placeholder="Enter the amount"
-                />
-              </div>
-              <div className="w-full rounded-md bg-purple py-3 mt-4">
-                <button className="w-full text-white text-lg">Generate QR</button>
+              <div style={{ height: "auto", margin: "0 auto", maxWidth: 256, width: "100%" }}>
+                {qrdata ? (
+                  <QRCode
+                    size={256}
+                    style={{
+                      height: "auto",
+                      maxWidth: "100%",
+                      width: "100%",
+                      borderRadius: "15px",
+                    }}
+                    value={JSON.stringify(qrdata)}
+                    viewBox={`0 0 256 256`}
+                  />
+                ) : (
+                  <>
+                    <div className="w-full">
+                      <label className="w-full text-sm" htmlFor="chains">
+                        Select a chain
+                      </label>
+                      <select
+                        className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
+                        name="chains"
+                        id="chains"
+                        onChange={(e) => setChainID(Number(e.target.value))}
+                      >
+                        {chains.chains.map((chain, index) => {
+                          return (
+                            <option key={index} value={chain.id}>
+                              <div>
+                                <Image
+                                  src={chain.logoURI}
+                                  alt={chain.name}
+                                  height={24}
+                                  width={24}
+                                />
+                                {chain.name}
+                              </div>
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    <div className="w-full">
+                      <label className="text-sm" htmlFor="chains">
+                        Select a token
+                      </label>
+                      <select
+                        className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
+                        name="chains"
+                        id="chains"
+                        onChange={(e) => setTokenAddress(e.target.value)}
+                      >
+                        {tokens[chainID].map((token, index) => {
+                          return (
+                            <option key={index} value={token.address}>
+                              <div>
+                                <Image
+                                  src={token.logoURI}
+                                  alt={token.name}
+                                  height={24}
+                                  width={24}
+                                />
+                                {token.symbol}
+                              </div>
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    <div className="mb-2">
+                      <label className="w-full text-sm" htmlFor="chains">
+                        Enter the amount
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-base"
+                        placeholder="Enter the amount"
+                        onChange={(e) => setAmount(e.currentTarget.valueAsNumber)}
+                      />
+                    </div>
+                    <div className="w-full rounded-md bg-purple py-3 mt-4">
+                      <button className="w-full text-white text-lg" onClick={() => generateQR()}>
+                        Generate QR
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
