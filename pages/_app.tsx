@@ -5,7 +5,7 @@ import { RainbowKitProvider, getDefaultWallets } from "@rainbow-me/rainbowkit";
 import { chain, configureChains, createClient, WagmiConfig } from "wagmi";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
-import Layout from "../layout/layout";
+import Layout from "../layout/Layout";
 
 const { chains, provider, webSocketProvider } = configureChains(
   [
