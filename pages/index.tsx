@@ -9,6 +9,8 @@ import QRCode from "react-qr-code";
 import { useAccount, usePrepareSendTransaction, useSendTransaction } from "wagmi";
 import { TransactionRequest } from "@ethersproject/providers";
 import { generateSteps } from "../utils/interaction";
+import { useEnsName } from "wagmi";
+import { useEnsAvatar } from "wagmi";
 
 const Home: NextPage = () => {
   const [txData, setTxData] = useState<{
@@ -30,6 +32,21 @@ const Home: NextPage = () => {
   }>();
 
   const account = useAccount();
+  const {
+    data: reciverENSName,
+    isError: isENSNameError,
+    isLoading: isENSLoading,
+  } = useEnsName({
+    address: (txData?.userAddress || "") as unknown as `0x${string}`,
+  });
+
+  const {
+    data: reciverENSAvatar,
+    isError: isENSAvatarError,
+    isLoading: isENSAvatarLoading,
+  } = useEnsAvatar({
+    address: (txData?.userAddress || "") as unknown as `0x${string}`,
+  });
 
   const { config, error } = usePrepareSendTransaction({
     request: {
@@ -72,11 +89,15 @@ const Home: NextPage = () => {
       console.log("Not a valid amount");
       return;
     }
+    if (!account.address) {
+      console.log("Not a valid account address");
+      return;
+    }
     setQRData({
       amount: amount,
       chainID: chainID,
       tokenAddress: tokenAddress,
-      userAddress: "string",
+      userAddress: account.address,
     });
   }
   return (
@@ -123,27 +144,96 @@ const Home: NextPage = () => {
           </div>
           {pay === true ? (
             <div className="flex flex-col justify-center items-center my-10">
-              <QrReader
-                onResult={(result, error) => {
-                  if (error) console.info(error);
-                  if (result) setTxData(JSON.parse(result?.getText()));
-                }}
-                className="w-full aspect-square"
-                videoStyle={{
-                  height: "100%",
-                  width: "100%",
-                  borderRadius: "1px",
-                }}
-                constraints={{ aspectRatio: 1 / 1, facingMode: "environment" }}
-              />
-              <div>
-                <div>{txData?.tokenAddress}</div>
-                <div>{txData?.amount}</div>
-              </div>
+              {!txData ? (
+                <QrReader
+                  onResult={(result, error) => {
+                    if (error) console.info(error);
+                    if (result) setTxData(JSON.parse(result?.getText()));
+                  }}
+                  className="w-full aspect-square"
+                  videoStyle={{
+                    height: "100%",
+                    width: "100%",
+                    borderRadius: "1px",
+                  }}
+                  constraints={{ aspectRatio: 1 / 1, facingMode: "environment" }}
+                />
+              ) : (
+                <div className="flex flex-col justify-center items-center text-center w-full">
+                  <h1 className="text-sm uppercase">Paying</h1>
+                  <h1 className="font-black text-black text-7xl">{txData?.amount}</h1>
+                  <h1 className="text-sm uppercase">to</h1>
+                  <h1>{!isENSAvatarLoading && reciverENSAvatar}</h1>
+                  <div className="flex flex-row justify-center items-center">
+                    <Image
+                      alt="Reciever Name"
+                      src={
+                        reciverENSAvatar
+                          ? reciverENSAvatar
+                          : "https://cryptologos.cc/logos/ethereum-name-service-ens-logo.png"
+                      }
+                      width={50}
+                      height={50}
+                    />
+                    <h1 className="text-gray-600 text-lg ml-2">
+                      {isENSLoading ? txData?.userAddress : reciverENSName}
+                    </h1>
+                  </div>
+                  <div className="w-full">
+                    <label className="w-full text-sm" htmlFor="chains">
+                      Select a chain
+                    </label>
+                    <select
+                      className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
+                      name="chains"
+                      id="chains"
+                      onChange={(e) => setChainID(Number(e.target.value))}
+                    >
+                      {chains.chains.map((chain, index) => {
+                        return (
+                          <option key={index} value={chain.id}>
+                            <div>
+                              <Image src={chain.logoURI} alt={chain.name} height={24} width={24} />
+                              {chain.name}
+                            </div>
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div className="w-full">
+                    <label className="text-sm" htmlFor="chains">
+                      Select a token
+                    </label>
+                    <select
+                      className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-lg mb-2 text-base"
+                      name="chains"
+                      id="chains"
+                      onChange={(e) => setTokenAddress(e.target.value)}
+                    >
+                      {tokens[chainID].map((token, index) => {
+                        return (
+                          <option key={index} value={token.address}>
+                            <div>
+                              <Image src={token.logoURI} alt={token.name} height={24} width={24} />
+                              {token.symbol}
+                            </div>
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <div className="w-full rounded-md bg-purple py-3 mt-4">
+                      <button className="w-full text-white text-lg" onClick={() => generateQR()}>
+                        PAY
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col justify-center items-center my-10">
-              <div style={{ height: "auto", margin: "0 auto", maxWidth: 256, width: "100%" }}>
+              <div style={{ height: "auto", margin: "0 auto", width: "100%" }}>
                 {qrdata ? (
                   <QRCode
                     size={256}
