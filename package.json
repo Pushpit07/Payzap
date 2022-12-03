@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@lifi/sdk": "^1.7.0",
     "@rainbow-me/rainbowkit": "^0.8.0",
     "daisyui": "^2.42.1",
     "ethers": "^5.0.0",
