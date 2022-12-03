@@ -68,12 +68,8 @@ const Home: NextPage = () => {
     setPay(!pay);
   }
   function generateQR() {
-    if (!amount) {
+    if (!amount || amount <= 0) {
       console.log("Not a valid amount");
-      return;
-    }
-    if (amount <= 0) {
-      console.log("Amount less than equal to zero");
       return;
     }
     setQRData({
@@ -129,13 +125,8 @@ const Home: NextPage = () => {
             <div className="flex flex-col justify-center items-center my-10">
               <QrReader
                 onResult={(result, error) => {
-                  if (!!result) {
-                    setTxData(JSON.parse(result?.getText()));
-                  }
-
-                  if (!!error) {
-                    // console.info(error);
-                  }
+                  if (error) console.info(error);
+                  if (result) setTxData(JSON.parse(result?.getText()));
                 }}
                 className="w-full aspect-square"
                 videoStyle={{
