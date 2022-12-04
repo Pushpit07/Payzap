@@ -1,4 +1,5 @@
-import LIFI, { QuoteRequest, TokensRequest } from "@lifi/sdk";
+import LIFI, { QuoteRequest, Route, TokensRequest } from "@lifi/sdk";
+import { Signer } from "ethers";
 
 const lifi = new LIFI({
   defaultRouteOptions: {
@@ -15,6 +16,10 @@ export const generateSteps = async (payRequest: QuoteRequest) => {
     console.error(error);
     return;
   }
+};
+
+export const transact = async (signer: Signer, route: Route) => {
+  return await lifi.executeRoute(signer, route);
 };
 
 export const getChains = async () => {

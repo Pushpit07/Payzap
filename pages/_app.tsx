@@ -27,11 +27,7 @@ const avalancheChain: Chain = {
   testnet: false,
 };
 
-const {
-  chains: [, ...chains],
-  provider,
-  webSocketProvider,
-} = configureChains(
+const { chains, provider, webSocketProvider } = configureChains(
   [chain.mainnet, chain.polygon, chain.arbitrum, avalancheChain],
   [jsonRpcProvider({ rpc: (chain) => ({ http: chain.rpcUrls.default }) })]
 );

@@ -4,12 +4,20 @@ import { useEffect, useState } from "react";
 import { QrReader } from "react-qr-reader";
 import Image from "next/image";
 import QRCode from "react-qr-code";
-import { useAccount, usePrepareSendTransaction, useSendTransaction } from "wagmi";
+import {
+  erc20ABI,
+  useAccount,
+  usePrepareSendTransaction,
+  useSendTransaction,
+  useSigner,
+  useSwitchNetwork,
+} from "wagmi";
 import { TransactionRequest } from "@ethersproject/providers";
-import { generateSteps, getChains, getTokens } from "../utils/interaction";
+import { generateSteps, getChains, getTokens, transact } from "../utils/interaction";
 import { useEnsName } from "wagmi";
 import { useEnsAvatar } from "wagmi";
 import { ExtendedChain, Token } from "@lifi/sdk";
+import { Contract } from "ethers";
 
 const Home: NextPage = () => {
   const [txData, setTxData] = useState<{
@@ -33,32 +41,23 @@ const Home: NextPage = () => {
   }>();
 
   const account = useAccount();
-  const {
-    data: reciverENSName,
-    isError: isENSNameError,
-    isLoading: isENSLoading,
-  } = useEnsName({
-    address: (txData?.userAddress || "") as unknown as `0x${string}`,
+  const { data: reciverENSName } = useEnsName({
+    address: (txData?.userAddress || "") as `0x${string}`,
     chainId: 1,
   });
-
-  const {
-    data: reciverENSAvatar,
-    isError: isENSAvatarError,
-    isLoading: isENSAvatarLoading,
-  } = useEnsAvatar({
-    address: (txData?.userAddress || "") as unknown as `0x${string}`,
+  const { data: reciverENSAvatar, isLoading: isENSAvatarLoading } = useEnsAvatar({
+    address: (txData?.userAddress || "") as `0x${string}`,
     chainId: 1,
   });
-
-  const { config, error } = usePrepareSendTransaction({
+  const { config } = usePrepareSendTransaction({
     request: {
       ...txRequest,
       to: txRequest?.to || "",
     },
   });
-
-  const { data, isLoading, isSuccess, sendTransaction } = useSendTransaction(config);
+  const { isLoading, sendTransaction } = useSendTransaction(config);
+  const { data: signer } = useSigner({ chainId: chainID });
+  const { switchNetwork } = useSwitchNetwork();
 
   useEffect(() => {
     (async () => {
@@ -70,41 +69,50 @@ const Home: NextPage = () => {
   useEffect(() => {
     (async () => {
       if (chainID) {
+        switchNetwork?.(chainID);
         const tokens = await getTokens({ chains: [chainID] });
-        setTokens(tokens.tokens[chainID]);
+        setTokens(tokens.tokens[chainID].filter((token) => token.priceUSD === "1"));
         setTokenAddress(tokens.tokens[chainID][0].address);
       }
     })();
   }, [chainID]);
 
   useEffect(() => {
-    if (txData && pay && account.address) {
-      (async () => {
-        if (!account.address || !tokenAddress) return;
-        const steps = await generateSteps({
-          fromChain: chainID,
-          fromToken: tokenAddress,
-          fromAddress: account.address,
-          fromAmount: "1000",
-          toChain: txData.chainId,
-          toToken: txData.tokenAddress,
-          toAddress: txData.userAddress,
-          order: "RECOMMENDED",
-        });
-        setTxRequest(steps?.transactionRequest);
-      })();
-    }
-  }, [txData, pay, account, tokenAddress, chainID]);
+    (async () => {
+      if (!txData) return;
+      await swapAndPay(txData);
+    })();
+  }, [chainID, tokenAddress]);
+
+  const swapAndPay = async (txData: {
+    chainId: number;
+    tokenAddress: string;
+    amount: string;
+    userAddress: string;
+  }) => {
+    if (!account.address || !tokenAddress) return;
+    console.log("fetching routes");
+    const steps = await generateSteps({
+      fromChain: chainID,
+      fromToken: tokenAddress,
+      fromAddress: account.address,
+      fromAmount: txData.amount.toString(),
+      toChain: txData.chainId,
+      toToken: txData.tokenAddress,
+      toAddress: txData.userAddress,
+      order: "RECOMMENDED",
+    });
+    console.log("routes =>", steps);
+    if (!steps) return;
+    setTxRequest(steps.transactionRequest);
+  };
 
   const Active =
     "flex flex-row justify-center items-center bg-purple text-white rounded-full px-4 py-1 text-lg cursor-pointer";
   const InActive =
     "flex flex-row justify-center items-center bg-white text-purple rounded-full px-4 py-1 text-lg cursor-pointer";
 
-  function handleToggle() {
-    setPay(!pay);
-  }
-  function generateQR() {
+  const generateQR = async () => {
     if (!amount || amount <= 0) {
       console.log("Not a valid amount");
       return;
@@ -113,13 +121,21 @@ const Home: NextPage = () => {
       console.log("Not a valid account address");
       return;
     }
+    if (!tokenAddress || !signer) return;
+    const erc20 = new Contract(tokenAddress, erc20ABI, signer);
+    const balanceBefore = await erc20.balanceOf(account.address);
     setQRData({
       amount: amount,
       chainId: chainID,
       tokenAddress: tokenAddress || "",
       userAddress: account.address,
     });
-  }
+    let balanceAfter = await erc20.balanceOf(account.address);
+    while (balanceBefore == balanceAfter) {
+      balanceAfter = await erc20.balanceOf(account.address);
+    }
+    //SUCCESS
+  };
   return (
     <div>
       <Head>
@@ -130,7 +146,7 @@ const Home: NextPage = () => {
       <div className="min-h-screen flex flex-col justify-center items-center">
         <div className="bg-white shadow-md rounded-md w-96 px-8 py-4">
           <div className="flex flex-row justify-evenly">
-            <div className={pay ? Active : InActive} onClick={() => handleToggle()}>
+            <div className={pay ? Active : InActive} onClick={() => setPay(!pay)}>
               Pay
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -146,7 +162,7 @@ const Home: NextPage = () => {
                 />
               </svg>
             </div>
-            <div className={!pay ? Active : InActive} onClick={() => handleToggle()}>
+            <div className={!pay ? Active : InActive} onClick={() => setPay(!pay)}>
               Recieve
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -162,12 +178,16 @@ const Home: NextPage = () => {
               </svg>
             </div>
           </div>
-          {pay === true ? (
+          {pay ? (
             <div className="flex flex-col justify-center items-center my-10">
               {!txData ? (
                 <QrReader
-                  onResult={(result, error) => {
-                    if (result) setTxData(JSON.parse(result?.getText()));
+                  onResult={async (result) => {
+                    if (!!result) {
+                      const txData = JSON.parse(result?.getText());
+                      setTxData(txData);
+                      await swapAndPay(txData);
+                    }
                   }}
                   className="w-full aspect-square"
                   videoStyle={{
@@ -261,7 +281,13 @@ const Home: NextPage = () => {
                           <button
                             disabled={!sendTransaction}
                             className="w-full text-white text-lg"
-                            onClick={() => sendTransaction?.()}
+                            onClick={async () => {
+                              if (!tokenAddress || !signer) return;
+                              const erc20 = new Contract(tokenAddress, erc20ABI, signer);
+                              const allowance = await erc20.approve(txRequest?.to, txData.amount);
+                              await allowance.wait();
+                              sendTransaction?.();
+                            }}
                           >
                             {isLoading ? "Check Wallet" : "PAY"}
                           </button>
