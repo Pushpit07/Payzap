@@ -141,7 +141,7 @@ const Home: NextPage = () => {
       <Head>
         <title>Payzap App</title>
         <meta name="description" content="Payzap your cross chain payment solution" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.png" />
       </Head>
       <div className="min-h-screen flex flex-col justify-center items-center">
         <div className="bg-white shadow-md rounded-md w-96 px-8 py-4">
