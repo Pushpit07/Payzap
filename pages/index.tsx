@@ -121,20 +121,12 @@ const Home: NextPage = () => {
       console.log("Not a valid account address");
       return;
     }
-    if (!tokenAddress || !signer) return;
-    const erc20 = new Contract(tokenAddress, erc20ABI, signer);
-    const balanceBefore = await erc20.balanceOf(account.address);
     setQRData({
       amount: amount,
       chainId: chainID,
       tokenAddress: tokenAddress || "",
       userAddress: account.address,
     });
-    let balanceAfter = await erc20.balanceOf(account.address);
-    while (balanceBefore == balanceAfter) {
-      balanceAfter = await erc20.balanceOf(account.address);
-    }
-    //SUCCESS
   };
   return (
     <div>
